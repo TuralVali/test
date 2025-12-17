@@ -1,0 +1,262 @@
+import customtkinter as ctk
+from tkinter import messagebox
+from datetime import date
+
+# ================== DARK THEME (Win11 / Citi-like) ==================
+COLOR_APP_BG            = "#0E1117"
+
+COLOR_HEADER_BG         = "#141824"
+COLOR_HEADER_TEXT       = "#E6EAF2"
+
+COLOR_PRIMARY           = "#1F6FEB"
+COLOR_PRIMARY_HOVER     = "#1158C7"
+
+COLOR_PANEL_BG          = "#161B22"
+COLOR_CARD_BG           = "#1C2230"
+COLOR_INPUT_BG          = "#0F1420"
+
+COLOR_TEXT_MAIN         = "#E6EAF2"
+COLOR_TEXT_MUTED        = "#9AA4B2"
+
+COLOR_BORDER            = "#2A3142"
+COLOR_RED_LINE          = "#D11A2A"   # optional accent line under header
+
+COLOR_BTN_GREEN         = "#238636"
+COLOR_BTN_GREEN_HOV     = "#2EA043"
+
+COLOR_BTN_YELLOW        = "#D29922"
+COLOR_BTN_YELLOW_HOV    = "#B88719"
+
+COLOR_BTN_BLUE          = COLOR_PRIMARY
+COLOR_BTN_BLUE_HOV      = COLOR_PRIMARY_HOVER
+
+COLOR_BTN_GRAY          = "#2A3142"
+COLOR_BTN_GRAY_HOV      = "#3A4257"
+
+COLOR_STATUS_OK         = "#3FB950"
+COLOR_STATUS_ERR        = "#F85149"
+# ================================================================
+
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("dark-blue")
+
+
+class ScenarioChartGenerator(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+
+        self.title("Scenario Chart Generator")
+        self.geometry("980x620")
+        self.minsize(900, 560)
+
+        # App background
+        self.configure(fg_color=COLOR_APP_BG)
+
+        # Root grid
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        # ===== Header =====
+        header = ctk.CTkFrame(self, corner_radius=0, fg_color=COLOR_HEADER_BG)
+        header.grid(row=0, column=0, sticky="ew")
+        header.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            header,
+            text="Scenario Chart Generator",
+            font=("Segoe UI", 30, "bold"),
+            text_color=COLOR_HEADER_TEXT
+        ).grid(row=0, column=0, padx=22, pady=(18, 14), sticky="w")
+
+        # Optional red line under header
+        ctk.CTkFrame(
+            self,
+            height=2,
+            corner_radius=0,
+            fg_color=COLOR_RED_LINE
+        ).grid(row=0, column=0, sticky="ew", pady=(72, 0))
+
+        # ===== Main panel =====
+        panel = ctk.CTkFrame(self, corner_radius=0, fg_color=COLOR_PANEL_BG)
+        panel.grid(row=1, column=0, sticky="nsew", padx=16, pady=16)
+        panel.grid_columnconfigure(0, weight=1)
+        panel.grid_rowconfigure(0, weight=1)
+
+        # Card (form container)
+        card = ctk.CTkFrame(panel, corner_radius=16, fg_color=COLOR_CARD_BG)
+        card.grid(row=0, column=0, sticky="nsew")
+        card.grid_columnconfigure(1, weight=1)
+
+        label_font = ("Segoe UI", 14)
+        entry_font = ("Segoe UI", 13)
+
+        # ===== Variables =====
+        self.var_type = ctk.StringVar(value="global")
+        self.var_entity = ctk.StringVar()
+        self.var_base_id = ctk.StringVar()
+        self.var_stress_id = ctk.StringVar()
+        self.var_mev_path = ctk.StringVar()
+        self.var_pdf_path = ctk.StringVar(value="scenario_charts.pdf")
+        self.var_start_date = ctk.StringVar(value=str(date.today()))
+
+        def label(parent, text):
+            return ctk.CTkLabel(
+                parent, text=text, font=label_font,
+                text_color=COLOR_TEXT_MAIN
+            )
+
+        def entry(parent, textvariable):
+            return ctk.CTkEntry(
+                parent,
+                textvariable=textvariable,
+                font=entry_font,
+                height=38,
+                fg_color=COLOR_INPUT_BG,
+                text_color=COLOR_TEXT_MAIN,
+                placeholder_text_color=COLOR_TEXT_MUTED,
+                border_color=COLOR_BORDER
+            )
+
+        def add_row(r, text, widget):
+            label(card, text).grid(row=r, column=0, padx=(22, 14), pady=10, sticky="w")
+            widget.grid(row=r, column=1, padx=(0, 22), pady=10, sticky="ew")
+
+        # ===== Fields (as in picture) =====
+        type_menu = ctk.CTkOptionMenu(
+            card,
+            variable=self.var_type,
+            values=["global", "regional", "entity", "custom"],
+            font=entry_font,
+            dropdown_font=entry_font,
+            height=38,
+            fg_color=COLOR_INPUT_BG,
+            button_color=COLOR_BTN_GRAY,
+            button_hover_color=COLOR_BTN_GRAY_HOV,
+            text_color=COLOR_TEXT_MAIN,
+            dropdown_fg_color=COLOR_INPUT_BG,
+            dropdown_text_color=COLOR_TEXT_MAIN
+        )
+        add_row(0, "Type", type_menu)
+
+        add_row(1, "Entity", entry(card, self.var_entity))
+        add_row(2, "Base Scenario ID", entry(card, self.var_base_id))
+        add_row(3, "Stress Scenario ID", entry(card, self.var_stress_id))
+        add_row(4, "MEVs file path", entry(card, self.var_mev_path))
+        add_row(5, "PDF Output Path", entry(card, self.var_pdf_path))
+        add_row(6, "Forecast Start Date", entry(card, self.var_start_date))
+
+        # ===== Buttons row (Fill Example / Clear All / Generate Charts / Quit) =====
+        btn_row = ctk.CTkFrame(card, fg_color="transparent")
+        btn_row.grid(row=7, column=0, columnspan=2, padx=22, pady=(16, 8), sticky="ew")
+        btn_row.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+        ctk.CTkButton(
+            btn_row,
+            text="Fill Example",
+            height=46,
+            font=("Segoe UI", 14, "bold"),
+            fg_color=COLOR_BTN_GREEN,
+            hover_color=COLOR_BTN_GREEN_HOV,
+            text_color=COLOR_TEXT_MAIN,
+            command=self.fill_example
+        ).grid(row=0, column=0, padx=(0, 12), pady=8, sticky="ew")
+
+        ctk.CTkButton(
+            btn_row,
+            text="Clear All",
+            height=46,
+            font=("Segoe UI", 14, "bold"),
+            fg_color=COLOR_BTN_YELLOW,
+            hover_color=COLOR_BTN_YELLOW_HOV,
+            text_color="#0B0F16",
+            command=self.clear_all
+        ).grid(row=0, column=1, padx=12, pady=8, sticky="ew")
+
+        ctk.CTkButton(
+            btn_row,
+            text="Generate Charts",
+            height=46,
+            font=("Segoe UI", 14, "bold"),
+            fg_color=COLOR_BTN_BLUE,
+            hover_color=COLOR_BTN_BLUE_HOV,
+            text_color=COLOR_TEXT_MAIN,
+            command=self.generate_charts
+        ).grid(row=0, column=2, padx=12, pady=8, sticky="ew")
+
+        ctk.CTkButton(
+            btn_row,
+            text="Quit",
+            height=46,
+            font=("Segoe UI", 14, "bold"),
+            fg_color=COLOR_BTN_GRAY,
+            hover_color=COLOR_BTN_GRAY_HOV,
+            text_color=COLOR_TEXT_MAIN,
+            command=self.destroy
+        ).grid(row=0, column=3, padx=(12, 0), pady=8, sticky="ew")
+
+        # ===== Status (Ready) =====
+        status_row = ctk.CTkFrame(card, fg_color="transparent")
+        status_row.grid(row=8, column=0, columnspan=2, padx=22, pady=(8, 18), sticky="w")
+
+        self.status_dot = ctk.CTkLabel(
+            status_row, text="•", font=("Segoe UI", 22),
+            text_color=COLOR_STATUS_OK
+        )
+        self.status_dot.grid(row=0, column=0, sticky="w")
+
+        self.status_label = ctk.CTkLabel(
+            status_row, text="Ready", font=("Segoe UI", 13),
+            text_color=COLOR_TEXT_MUTED
+        )
+        self.status_label.grid(row=0, column=1, padx=(6, 0), sticky="w")
+
+    # ================= Actions =================
+    def set_status(self, text: str, ok: bool = True):
+        self.status_label.configure(text=text, text_color=(COLOR_TEXT_MUTED if ok else COLOR_STATUS_ERR))
+        self.status_dot.configure(text_color=(COLOR_STATUS_OK if ok else COLOR_STATUS_ERR))
+
+    def fill_example(self):
+        self.var_type.set("global")
+        self.var_entity.set("CITI_PL")
+        self.var_base_id.set("BASE_2025Q4")
+        self.var_stress_id.set("STRESS_2025Q4")
+        self.var_mev_path.set(r"C:\data\mevs\mevs_2025q4.csv")
+        self.var_pdf_path.set("scenario_charts.pdf")
+        self.var_start_date.set("2025-09-30")
+        self.set_status("Example filled", ok=True)
+
+    def clear_all(self):
+        self.var_type.set("global")
+        self.var_entity.set("")
+        self.var_base_id.set("")
+        self.var_stress_id.set("")
+        self.var_mev_path.set("")
+        self.var_pdf_path.set("scenario_charts.pdf")
+        self.var_start_date.set(str(date.today()))
+        self.set_status("Cleared", ok=True)
+
+    def generate_charts(self):
+        # Minimal validation (adjust as you like)
+        if not self.var_pdf_path.get().strip():
+            self.set_status("PDF Output Path is required", ok=False)
+            messagebox.showerror("Validation", "PDF Output Path is required.")
+            return
+
+        # Replace this with your real PDF/chart generation logic
+        info = (
+            f"Type: {self.var_type.get()}\n"
+            f"Entity: {self.var_entity.get()}\n"
+            f"Base Scenario ID: {self.var_base_id.get()}\n"
+            f"Stress Scenario ID: {self.var_stress_id.get()}\n"
+            f"MEVs file path: {self.var_mev_path.get()}\n"
+            f"PDF Output Path: {self.var_pdf_path.get()}\n"
+            f"Forecast Start Date: {self.var_start_date.get()}\n"
+        )
+
+        self.set_status("Generate Charts clicked (demo)", ok=True)
+        messagebox.showinfo("Generate Charts", "Demo action triggered.\n\n" + info)
+
+
+if __name__ == "__main__":
+    app = ScenarioChartGenerator()
+    app.mainloop()
