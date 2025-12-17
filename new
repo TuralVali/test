@@ -3,7 +3,7 @@ from tkinter import messagebox
 from datetime import date
 
 # ============================================================
-# THEME PALETTES (all colors here)
+# THEME PALETTES
 # ============================================================
 THEMES = {
     "dark": {
@@ -18,7 +18,6 @@ THEMES = {
 
         "TEXT_MAIN": "#E6EAF2",
         "TEXT_MUTED": "#9AA4B2",
-        "BORDER": "#2A3142",
 
         "PRIMARY": "#1F6FEB",
         "PRIMARY_HOVER": "#1158C7",
@@ -28,7 +27,6 @@ THEMES = {
 
         "BTN_YELLOW": "#D29922",
         "BTN_YELLOW_HOV": "#B88719",
-        "BTN_YELLOW_TEXT": "#0B0F16",
 
         "BTN_GRAY": "#2A3142",
         "BTN_GRAY_HOV": "#3A4257",
@@ -49,17 +47,16 @@ THEMES = {
 
         "TEXT_MAIN": "#101828",
         "TEXT_MUTED": "#475467",
-        "BORDER": "#D0D5DD",
 
-        "PRIMARY": "#0B5ED7",
-        "PRIMARY_HOVER": "#094AA8",
+        # IMPORTANT: primary blue reused
+        "PRIMARY": "#1F6FEB",
+        "PRIMARY_HOVER": "#1158C7",
 
         "BTN_GREEN": "#1FA43A",
         "BTN_GREEN_HOV": "#17802C",
 
         "BTN_YELLOW": "#F0C200",
         "BTN_YELLOW_HOV": "#C9A300",
-        "BTN_YELLOW_TEXT": "#111111",
 
         "BTN_GRAY": "#E4E7EC",
         "BTN_GRAY_HOV": "#D0D5DD",
@@ -69,7 +66,7 @@ THEMES = {
     }
 }
 
-ctk.set_default_color_theme("dark-blue")  # base theme; we override colors ourselves
+ctk.set_default_color_theme("dark-blue")
 
 
 class ScenarioChartGenerator(ctk.CTk):
@@ -80,11 +77,9 @@ class ScenarioChartGenerator(ctk.CTk):
         self.geometry("980x640")
         self.minsize(900, 560)
 
-        # Track theme
         self.current_theme = "dark"
         ctk.set_appearance_mode("dark")
 
-        # Root grid
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -92,7 +87,6 @@ class ScenarioChartGenerator(ctk.CTk):
         self.header = ctk.CTkFrame(self, corner_radius=0)
         self.header.grid(row=0, column=0, sticky="ew")
         self.header.grid_columnconfigure(0, weight=1)
-        self.header.grid_columnconfigure(1, weight=0)
 
         self.title_label = ctk.CTkLabel(
             self.header,
@@ -101,7 +95,7 @@ class ScenarioChartGenerator(ctk.CTk):
         )
         self.title_label.grid(row=0, column=0, padx=22, pady=(16, 12), sticky="w")
 
-        # Theme switch (segmented)
+        # Theme switch (same colors for both themes)
         self.theme_switch = ctk.CTkSegmentedButton(
             self.header,
             values=["Dark", "Light"],
@@ -109,31 +103,23 @@ class ScenarioChartGenerator(ctk.CTk):
             height=34
         )
         self.theme_switch.set("Dark")
-        self.theme_switch.grid(row=0, column=1, padx=22, pady=(16, 12), sticky="e")
+        self.theme_switch.grid(row=0, column=1, padx=22, pady=(16, 12))
 
-        # Red line under header
         self.red_line = ctk.CTkFrame(self, height=2, corner_radius=0)
         self.red_line.grid(row=0, column=0, sticky="ew", pady=(72, 0))
 
-        # ===== Main panel =====
+        # ===== Panel =====
         self.panel = ctk.CTkFrame(self, corner_radius=0)
         self.panel.grid(row=1, column=0, sticky="nsew", padx=16, pady=16)
-        self.panel.grid_columnconfigure(0, weight=1)
-        self.panel.grid_rowconfigure(0, weight=1)
 
-        # Card container
         self.card = ctk.CTkFrame(self.panel, corner_radius=16)
-        self.card.grid(row=0, column=0, sticky="nsew")
+        self.card.pack(fill="both", expand=True)
         self.card.grid_columnconfigure(1, weight=1)
-
-        # IMPORTANT: make a spacer row so status is ALWAYS visible at the bottom
-        # rows: 0-6 fields, 7 buttons, 8 spacer, 9 status
         self.card.grid_rowconfigure(8, weight=1)
 
         label_font = ("Segoe UI", 14)
         entry_font = ("Segoe UI", 13)
 
-        # ===== Variables =====
         self.var_type = ctk.StringVar(value="global")
         self.var_entity = ctk.StringVar()
         self.var_base_id = ctk.StringVar()
@@ -142,103 +128,75 @@ class ScenarioChartGenerator(ctk.CTk):
         self.var_pdf_path = ctk.StringVar(value="scenario_charts.pdf")
         self.var_start_date = ctk.StringVar(value=str(date.today()))
 
-        # Keep references for theme updates
-        self._labels = []
-        self._entries = []
-        self._buttons = []
-
-        def make_label(text):
-            w = ctk.CTkLabel(self.card, text=text, font=label_font)
-            self._labels.append(w)
-            return w
-
-        def make_entry(var):
-            w = ctk.CTkEntry(self.card, textvariable=var, font=entry_font, height=38)
-            self._entries.append(w)
-            return w
+        self.labels, self.entries = [], []
 
         def add_row(r, text, widget):
-            make_label(text).grid(row=r, column=0, padx=(22, 14), pady=10, sticky="w")
+            lbl = ctk.CTkLabel(self.card, text=text, font=label_font)
+            lbl.grid(row=r, column=0, padx=(22, 14), pady=10, sticky="w")
+            self.labels.append(lbl)
             widget.grid(row=r, column=1, padx=(0, 22), pady=10, sticky="ew")
 
-        # Type option menu
+        def entry(var):
+            e = ctk.CTkEntry(self.card, textvariable=var, font=entry_font, height=38)
+            self.entries.append(e)
+            return e
+
         self.type_menu = ctk.CTkOptionMenu(
-            self.card,
-            variable=self.var_type,
+            self.card, variable=self.var_type,
             values=["global", "regional", "entity", "custom"],
-            font=entry_font,
-            dropdown_font=entry_font,
-            height=38
+            font=entry_font, height=38
         )
         add_row(0, "Type", self.type_menu)
-
-        add_row(1, "Entity", make_entry(self.var_entity))
-        add_row(2, "Base Scenario ID", make_entry(self.var_base_id))
-        add_row(3, "Stress Scenario ID", make_entry(self.var_stress_id))
-        add_row(4, "MEVs file path", make_entry(self.var_mev_path))
-        add_row(5, "PDF Output Path", make_entry(self.var_pdf_path))
-        add_row(6, "Forecast Start Date", make_entry(self.var_start_date))
+        add_row(1, "Entity", entry(self.var_entity))
+        add_row(2, "Base Scenario ID", entry(self.var_base_id))
+        add_row(3, "Stress Scenario ID", entry(self.var_stress_id))
+        add_row(4, "MEVs file path", entry(self.var_mev_path))
+        add_row(5, "PDF Output Path", entry(self.var_pdf_path))
+        add_row(6, "Forecast Start Date", entry(self.var_start_date))
 
         # ===== Buttons =====
-        self.btn_row = ctk.CTkFrame(self.card, fg_color="transparent")
-        self.btn_row.grid(row=7, column=0, columnspan=2, padx=22, pady=(16, 8), sticky="ew")
-        self.btn_row.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        btn_row = ctk.CTkFrame(self.card, fg_color="transparent")
+        btn_row.grid(row=7, column=0, columnspan=2, padx=22, pady=(16, 8), sticky="ew")
+        btn_row.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
-        self.btn_fill = ctk.CTkButton(self.btn_row, text="Fill Example", height=46,
-                                      font=("Segoe UI", 14, "bold"), command=self.fill_example)
-        self.btn_fill.grid(row=0, column=0, padx=(0, 12), pady=8, sticky="ew")
+        self.btn_fill = ctk.CTkButton(btn_row, text="Fill Example", height=46, command=self.fill_example)
+        self.btn_clear = ctk.CTkButton(btn_row, text="Clear All", height=46, command=self.clear_all)
+        self.btn_generate = ctk.CTkButton(btn_row, text="Generate Charts", height=46, command=self.generate_charts)
+        self.btn_quit = ctk.CTkButton(btn_row, text="Quit", height=46, command=self.destroy)
 
-        self.btn_clear = ctk.CTkButton(self.btn_row, text="Clear All", height=46,
-                                       font=("Segoe UI", 14, "bold"), command=self.clear_all)
-        self.btn_clear.grid(row=0, column=1, padx=12, pady=8, sticky="ew")
+        for i, b in enumerate([self.btn_fill, self.btn_clear, self.btn_generate, self.btn_quit]):
+            b.grid(row=0, column=i, padx=8, sticky="ew")
 
-        self.btn_generate = ctk.CTkButton(self.btn_row, text="Generate Charts", height=46,
-                                          font=("Segoe UI", 14, "bold"), command=self.generate_charts)
-        self.btn_generate.grid(row=0, column=2, padx=12, pady=8, sticky="ew")
-
-        self.btn_quit = ctk.CTkButton(self.btn_row, text="Quit", height=46,
-                                      font=("Segoe UI", 14, "bold"), command=self.destroy)
-        self.btn_quit.grid(row=0, column=3, padx=(12, 0), pady=8, sticky="ew")
-
-        self._buttons.extend([self.btn_fill, self.btn_clear, self.btn_generate, self.btn_quit])
-
-        # ===== Status (Pinned bottom) =====
+        # ===== Status =====
         self.status_row = ctk.CTkFrame(self.card, fg_color="transparent")
-        self.status_row.grid(row=9, column=0, columnspan=2, padx=22, pady=(6, 18), sticky="w")
+        self.status_row.grid(row=9, column=0, columnspan=2, padx=22, pady=(8, 18), sticky="w")
 
         self.status_dot = ctk.CTkLabel(self.status_row, text="•", font=("Segoe UI", 22))
-        self.status_dot.grid(row=0, column=0, sticky="w")
-
         self.status_label = ctk.CTkLabel(self.status_row, text="Ready", font=("Segoe UI", 13))
-        self.status_label.grid(row=0, column=1, padx=(6, 0), sticky="w")
+        self.status_dot.grid(row=0, column=0)
+        self.status_label.grid(row=0, column=1, padx=(6, 0))
 
-        # Apply initial theme colors
-        self.apply_theme(self.current_theme)
-        self.set_status("Ready", ok=True)
+        self.apply_theme("dark")
+        self.set_status("Ready", True)
 
-    # ============================================================
-    # Theme Handling
-    # ============================================================
-    def on_theme_change(self, value: str):
-        theme = "dark" if value.lower() == "dark" else "light"
+    # ================= Theme =================
+    def on_theme_change(self, value):
+        theme = "dark" if value == "Dark" else "light"
         self.current_theme = theme
         ctk.set_appearance_mode(theme)
         self.apply_theme(theme)
-        self.set_status(f"Theme: {value}", ok=True)
 
-    def apply_theme(self, theme: str):
+    def apply_theme(self, theme):
         C = THEMES[theme]
 
-        # Window + containers
         self.configure(fg_color=C["APP_BG"])
         self.header.configure(fg_color=C["HEADER_BG"])
-        self.red_line.configure(fg_color=C["RED_LINE"])
         self.panel.configure(fg_color=C["PANEL_BG"])
         self.card.configure(fg_color=C["CARD_BG"])
-
-        # Header text + theme switch colors
+        self.red_line.configure(fg_color=C["RED_LINE"])
         self.title_label.configure(text_color=C["HEADER_TEXT"])
 
+        # SAME segmented button colors in both themes
         self.theme_switch.configure(
             fg_color=C["BTN_GRAY"],
             selected_color=C["PRIMARY"],
@@ -248,20 +206,17 @@ class ScenarioChartGenerator(ctk.CTk):
             text_color=C["TEXT_MAIN"]
         )
 
-        # Labels
-        for w in self._labels:
-            w.configure(text_color=C["TEXT_MAIN"])
+        for lbl in self.labels:
+            lbl.configure(text_color=C["TEXT_MAIN"])
 
-        # Entries
-        for w in self._entries:
-            w.configure(
+        for e in self.entries:
+            e.configure(
                 fg_color=C["INPUT_BG"],
                 text_color=C["TEXT_MAIN"],
-                border_color=C["BORDER"],
+                border_color=C["PRIMARY"],   # dark blue border
                 placeholder_text_color=C["TEXT_MUTED"]
             )
 
-        # OptionMenu (Type)
         self.type_menu.configure(
             fg_color=C["INPUT_BG"],
             text_color=C["TEXT_MAIN"],
@@ -271,62 +226,38 @@ class ScenarioChartGenerator(ctk.CTk):
             dropdown_text_color=C["TEXT_MAIN"]
         )
 
-        # Buttons
-        self.btn_fill.configure(fg_color=C["BTN_GREEN"], hover_color=C["BTN_GREEN_HOV"], text_color=C["TEXT_MAIN"])
-        self.btn_clear.configure(fg_color=C["BTN_YELLOW"], hover_color=C["BTN_YELLOW_HOV"], text_color=C["BTN_YELLOW_TEXT"])
-        self.btn_generate.configure(fg_color=C["PRIMARY"], hover_color=C["PRIMARY_HOVER"], text_color=C["TEXT_MAIN"])
-        self.btn_quit.configure(fg_color=C["BTN_GRAY"], hover_color=C["BTN_GRAY_HOV"], text_color=C["TEXT_MAIN"])
+        # Buttons: DO NOT change text colors
+        self.btn_fill.configure(fg_color=C["BTN_GREEN"], hover_color=C["BTN_GREEN_HOV"])
+        self.btn_clear.configure(fg_color=C["BTN_YELLOW"], hover_color=C["BTN_YELLOW_HOV"])
+        self.btn_generate.configure(fg_color=C["PRIMARY"], hover_color=C["PRIMARY_HOVER"])
+        self.btn_quit.configure(fg_color=C["BTN_GRAY"], hover_color=C["BTN_GRAY_HOV"])
 
-        # Status (make it visible in both themes)
         self.status_label.configure(text_color=C["TEXT_MAIN"])
+        self.status_dot.configure(text_color=C["STATUS_OK"])
 
-    # ============================================================
-    # Actions
-    # ============================================================
-    def set_status(self, text: str, ok: bool = True):
+    # ================= Logic =================
+    def set_status(self, text, ok=True):
         C = THEMES[self.current_theme]
         self.status_label.configure(text=text)
-        self.status_dot.configure(text_color=(C["STATUS_OK"] if ok else C["STATUS_ERR"]))
+        self.status_dot.configure(text_color=C["STATUS_OK"] if ok else C["STATUS_ERR"])
 
     def fill_example(self):
-        self.var_type.set("global")
         self.var_entity.set("CITI_PL")
         self.var_base_id.set("BASE_2025Q4")
         self.var_stress_id.set("STRESS_2025Q4")
         self.var_mev_path.set(r"C:\data\mevs\mevs_2025q4.csv")
-        self.var_pdf_path.set("scenario_charts.pdf")
         self.var_start_date.set("2025-09-30")
-        self.set_status("Example filled", ok=True)
+        self.set_status("Example filled", True)
 
     def clear_all(self):
-        self.var_type.set("global")
-        self.var_entity.set("")
-        self.var_base_id.set("")
-        self.var_stress_id.set("")
-        self.var_mev_path.set("")
-        self.var_pdf_path.set("scenario_charts.pdf")
-        self.var_start_date.set(str(date.today()))
-        self.set_status("Cleared", ok=True)
+        for v in [self.var_entity, self.var_base_id, self.var_stress_id, self.var_mev_path]:
+            v.set("")
+        self.set_status("Cleared", True)
 
     def generate_charts(self):
-        if not self.var_pdf_path.get().strip():
-            self.set_status("PDF Output Path is required", ok=False)
-            messagebox.showerror("Validation", "PDF Output Path is required.")
-            return
-
-        info = (
-            f"Type: {self.var_type.get()}\n"
-            f"Entity: {self.var_entity.get()}\n"
-            f"Base Scenario ID: {self.var_base_id.get()}\n"
-            f"Stress Scenario ID: {self.var_stress_id.get()}\n"
-            f"MEVs file path: {self.var_mev_path.get()}\n"
-            f"PDF Output Path: {self.var_pdf_path.get()}\n"
-            f"Forecast Start Date: {self.var_start_date.get()}\n"
-        )
-        self.set_status("Generate Charts clicked (demo)", ok=True)
-        messagebox.showinfo("Generate Charts", "Demo action triggered.\n\n" + info)
+        self.set_status("Generate Charts clicked (demo)", True)
+        messagebox.showinfo("Generate Charts", "Demo action triggered")
 
 
 if __name__ == "__main__":
-    app = ScenarioChartGenerator()
-    app.mainloop()
+    ScenarioChartGenerator().mainloop()
