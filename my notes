@@ -1,0 +1,747 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan  9 19:40:31 2026
+
+@author: Tural
+"""
+# https://plotly.com/python-api-reference/index.html
+# https://plotly.com/python-api-reference/generated/plotly.express.line
+# https://plotly.com/python/line-charts/
+# plotly.subplots: helper function for laying out multi-plot figures 
+# is making seperate plots in one graph... https://plotly.com/python-api-reference/plotly.subplots.html#subplots
+
+
+# plotly.express.line (high-level, fast)
+# What it does well
+
+# ✅ One-liner plotting
+# ✅ Automatically handles:
+
+# legends
+
+# colors
+
+# grouping
+
+# labels
+
+# faceting
+
+# When to use
+
+# Quick analysis
+
+# Prototyping
+
+# Simple dashboards
+
+# Clean default styling
+#=======================================================================
+# plotly.graph_objects + add_trace(go.Scatter) (low-level, full control)
+
+# What it does well
+
+# ✅ Full styling control
+# ✅ Precise layout tuning
+# ✅ Required for:
+
+# subplots
+
+# secondary y-axes
+
+# mixed chart types
+
+# animations at trace level - play button...
+
+import plotly
+dir(plotly)
+import plotly.express as px #one option
+
+# example data
+df = px.data.gapminder().query("country=='Canada'")
+fig = px.line(df, x="year", y="lifeExp", title="Life expectancy in Canada")
+fig.show()
+
+
+import plotly.express as px
+import pandas as pd
+
+df = pd.DataFrame(dict(
+    x = [1, 3, 2, 4],
+    y = [1, 2, 3, 4]
+))
+fig = px.line(df, x="x", y="y", title="Unsorted Input")
+fig.show()
+
+fig.__dict__
+help(fig)
+
+
+df = df.sort_values(by="x")
+fig = px.line(df, x="x", y="y", title="Sorted Input")
+fig.show()
+# ===============================================================================
+import pandas as pd
+import plotly.express as px
+
+# ----------------------------
+# 1. Create example DataFrame
+# ----------------------------
+df = pd.DataFrame({
+    "Formatted Date": pd.date_range(
+        start="2024-01-01",
+        periods=58,   # ✅ FIXED
+        freq="D"
+    ),
+    "Temperature (C)": [
+        2, 3, 1, 0, -1, 1, 2, 3, 4, 3,
+        2, 1, 0, -1, -2, 0, 1, 2, 3, 4,
+        5, 6, 5, 4, 3, 2, 1, 0, -1, 0,
+        1, 2, 3, 4, 5, 6, 7, 6, 5, 4,
+        3, 2, 1, 0, -1, -2, -1, 0, 1, 2,
+        3, 4, 5, 6, 7, 8, 7, 6
+    ]
+})
+
+# ----------------------------
+# 2. Plotly line chart
+# ----------------------------
+fig7 = px.line(
+    df,
+    x="Formatted Date",
+    y="Temperature (C)",
+    title="Interactive charts with Range Slider"
+)
+
+fig7.update_layout(
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=[
+                dict(count=7, label="1W", step="day", stepmode="backward"),
+                dict(count=14, label="2W", step="day", stepmode="backward"),
+                dict(count=1, label="1M", step="month", stepmode="backward"),
+                dict(step="all")
+            ]
+        ),
+        rangeslider=dict(visible=True),
+        type="date"
+    )
+)
+
+fig7.show()
+dir(fig7)
+# ===============================================================================
+
+import pandas as pd
+import plotly.express as px
+
+# ----------------------------
+# 1. Create example DataFrame
+# ----------------------------
+dates = pd.date_range(start="2024-01-01", periods=60, freq="D")
+
+scenario_a = [
+    2, 3, 1, 0, -1, 1, 2, 3, 4, 3,
+    2, 1, 0, -1, -2, 0, 1, 2, 3, 4,
+    5, 6, 5, 4, 3, 2, 1, 0, -1, 0,
+    1, 2, 3, 4, 5, 6, 7, 6, 5, 4,
+    3, 2, 1, 0, -1, -2, -1, 0, 1, 2,
+    3, 4, 5, 6, 7, 8, 7, 6, 5, 4
+]
+
+scenario_b = [v + 1 for v in scenario_a]
+scenario_c = [v - 1 for v in scenario_a]
+
+df = pd.DataFrame({
+    "Formatted Date": list(dates) * 3,
+    "Scenario": ["Scenario A"] * 60 + ["Scenario B"] * 60 + ["Scenario C"] * 60,
+    "Temperature (C)": scenario_a + scenario_b + scenario_c
+})
+
+# ----------------------------
+# 2. Plotly line chart
+# ----------------------------
+fig = px.line(
+    df,
+    x="Formatted Date",
+    y="Temperature (C)",
+    color="Scenario",
+    title="Interactive charts with X Slider + Y Controls"
+)
+
+# ----------------------------
+# 3. Layout & Controls
+# ----------------------------
+fig.update_layout(
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+
+    # X AXIS (true range slider)
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=[
+                dict(count=7, label="1W", step="day", stepmode="backward"),
+                dict(count=14, label="2W", step="day", stepmode="backward"),
+                dict(count=1, label="1M", step="month", stepmode="backward"),
+                dict(step="all")
+            ]
+        ),
+        rangeslider=dict(visible=True),
+        type="date",
+        showgrid=True,
+        gridcolor="lightgray"
+    ),
+
+    # Y AXIS (interactive zoom enabled)
+    yaxis=dict(
+        title="Temperature (C)",
+        showgrid=True,
+        gridcolor="lightgray",
+        fixedrange=False
+    ),
+
+    # Y-AXIS RANGE BUTTONS (slider alternative)
+    updatemenus=[
+        dict(
+            type="buttons",
+            direction="right",
+            x=0.5,
+            y=1.18,
+            xanchor="center",
+            buttons=[
+                dict(
+                    label="Auto Y",
+                    method="relayout",
+                    args=[{"yaxis.autorange": True}]
+                ),
+                dict(
+                    label="Tight Y",
+                    method="relayout",
+                    args=[{"yaxis.range": [-2, 6]}]
+                ),
+                dict(
+                    label="Wide Y",
+                    method="relayout",
+                    args=[{"yaxis.range": [-5, 10]}]
+                )
+            ]
+        )
+    ],
+
+    # Legend below chart
+    legend=dict(
+        orientation="h",
+        yanchor="top",
+        y=-0.12,
+        xanchor="center",
+        x=0.5
+    ),
+
+    margin=dict(t=120, b=120)
+)
+
+fig.show()
+
+#=================================================================================================
+# ==================================================
+# 1. IMPORT LIBRARIES
+# ==================================================
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+
+# ==================================================
+# 2. CREATE SAMPLE DATAFRAME
+# ==================================================
+df = pd.DataFrame({
+    "date": pd.date_range("2024-01-01", periods=30, freq="D"),
+    "value": [i + (i % 5) for i in range(30)],
+    "value2": [i * 1.5 for i in range(30)],
+    "category": ["A" if i % 2 == 0 else "B" for i in range(30)]
+})
+
+# ==================================================
+# 3. EXAMPLE 1 – BASIC LINE CHART
+# ==================================================
+fig1 = px.line(
+    df, x="date", y="value",
+    title="1. Basic Line Chart"
+)
+fig1.show()
+
+# ==================================================
+# 4. EXAMPLE 2 – MULTIPLE LINES
+# ==================================================
+fig2 = px.line(
+    df, x="date", y=["value", "value2"],
+    title="2. Multiple Lines"
+)
+fig2.show()
+
+# ==================================================
+# 5. EXAMPLE 3 – LINE WITH MARKERS
+# ==================================================
+fig3 = px.line(
+    df, x="date", y="value",
+    markers=True,
+    title="3. Line with Markers"
+)
+fig3.show()
+
+# ==================================================
+# 6. EXAMPLE 4 – LINE WITH SYMBOLS
+# ==================================================
+fig4 = px.line(
+    df,
+    x="date",
+    y="value",
+    color="category",
+    symbol="category",
+    markers=True,
+    title="4. Line with Symbols"
+)
+fig4.show()
+
+# ==================================================
+# 7. EXAMPLE 5 – CONNECTED SCATTER
+# ==================================================
+fig5 = px.line(
+    df,
+    x="value",
+    y="value2",
+    text="date",
+    title="5. Connected Scatter Plot"
+)
+fig5.update_traces(textposition="top center")
+fig5.show()
+
+# ==================================================
+# 8. EXAMPLE 6 – DATE AXIS + RANGE SLIDER
+# ==================================================
+fig6 = px.line(
+    df,
+    x="date",
+    y="value",
+    title="6. Date Axis with Range Slider"
+)
+
+fig6.update_layout(
+    xaxis=dict(
+        rangeslider=dict(visible=True),
+        type="date"
+    )
+)
+fig6.show()
+
+# ==================================================
+# 9. EXAMPLE 7 – RANGE SELECTOR BUTTONS
+# ==================================================
+fig7 = px.line(
+    df,
+    x="date",
+    y="value",
+    title="7. Range Selector Buttons"
+)
+
+fig7.update_layout(
+    xaxis=dict(
+        rangeselector=dict(
+            buttons=[
+                dict(count=7, label="1W", step="day", stepmode="backward"),
+                dict(count=14, label="2W", step="day", stepmode="backward"),
+                dict(count=1, label="1M", step="month", stepmode="backward"),
+                dict(step="all")
+            ]
+        ),
+        rangeslider=dict(visible=True),
+        type="date"
+    )
+)
+fig7.show()
+
+# ==================================================
+# 10. EXAMPLE 8 – GRAPH OBJECTS (CUSTOM STYLE)
+# ==================================================
+fig8 = go.Figure()
+
+fig8.add_trace(go.Scatter(
+    x=df["date"],
+    y=df["value"],
+    mode="lines+markers",
+    name="Custom Line",
+    line=dict(width=3),
+    marker=dict(size=8)
+))
+
+fig8.update_layout(title="8. Fully Custom Line (graph_objects)")
+fig8.show()
+
+# ==================================================
+# 11. EXAMPLE 9 – MULTIPLE STYLED LINES
+# ==================================================
+fig9 = go.Figure()
+
+fig9.add_trace(go.Scatter(
+    x=df["date"],
+    y=df["value"],
+    mode="lines",
+    name="Solid Line"
+))
+
+fig9.add_trace(go.Scatter(
+    x=df["date"],
+    y=df["value2"],
+    mode="lines+markers",
+    name="Dashed Line",
+    line=dict(dash="dash")
+))
+
+fig9.update_layout(title="9. Multiple Styled Lines")
+fig9.show()
+
+# ==================================================
+# 12. EXAMPLE 10 – THEME + HOVER TEMPLATE
+# ==================================================
+fig10 = px.line(
+    df,
+    x="date",
+    y="value",
+    title="10. Dark Theme + Custom Hover"
+)
+
+fig10.update_traces(
+    hovertemplate="Date: %{x}<br>Value: %{y}<extra></extra>"
+)
+
+fig10.update_layout(template="plotly_dark")
+fig10.show()
+
+##############################################################################
+# Retry: Create an HTML with two line charts next to each other (2-column layout)
+import pandas as pd
+import numpy as np
+import plotly.express as px
+from plotly.io import to_html
+
+# ============================
+# THEMES
+# ============================
+LIGHT = {
+    "page_bg": "#f5f5f5",
+    "text": "#111827",
+    "grid": "#E5E7EB",
+    "plot_bg": "#ffffff",
+    "paper_bg": "#ffffff",
+}
+
+DARK = {
+    "page_bg": "#0B1220",
+    "text": "#E5E7EB",
+    "grid": "#2A3441",
+    "plot_bg": "#0E1117",
+    "paper_bg": "#0E1117",
+}
+
+# ============================
+# SAMPLE DATA
+# ============================
+np.random.seed(1)
+
+countries = ["Poland", "Germany"]
+scenarios = ["a", "b", "c"]
+dates = pd.date_range("2024-01-01", periods=60, freq="D")
+
+rows = []
+for country in countries:
+    base = np.linspace(10, 25, len(dates)) + np.random.normal(0, 1.0, len(dates))
+    for scen in scenarios:
+        shift = {"a": 0, "b": 3, "c": -2}[scen]
+        for d, v in zip(dates, base + shift):
+            rows.append({
+                "country": country,
+                "date": d,
+                "scenario": scen,
+                "value": float(v)
+            })
+
+df = pd.DataFrame(rows)
+
+# ============================
+# APPLY THEME TO FIGURE
+# ============================
+def apply_theme(fig, theme):
+    fig.update_layout(
+        plot_bgcolor=theme["plot_bg"],
+        paper_bgcolor=theme["paper_bg"],
+        font=dict(color=theme["text"]),
+        xaxis=dict(
+            type="date",
+            rangeslider=dict(visible=True),
+            showgrid=True,
+            gridcolor=theme["grid"],
+            showline=False,
+            ticks="",
+            zeroline=False,
+        ),
+        yaxis=dict(
+            title="Value",
+            showgrid=True,
+            gridcolor=theme["grid"],
+            showline=False,
+            ticks="",
+            zeroline=False,
+            fixedrange=False
+        ),
+        legend=dict(
+            title="Scenario",
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color=theme["text"]),
+        ),
+        margin=dict(l=30, r=20, t=60, b=40),
+    )
+    return fig
+
+# ============================
+# BUILD FIGURES (LIGHT + DARK)
+# ============================
+light_divs, dark_divs = [], []
+include_js = True
+
+for country, dff in df.groupby("country"):
+    base_fig = px.line(
+        dff,
+        x="date",
+        y="value",
+        color="scenario",
+        title=f"{country} — Scenarios a / b / c"
+    )
+
+    fig_light = apply_theme(base_fig, LIGHT)
+
+    fig_dark_base = px.line(
+        dff,
+        x="date",
+        y="value",
+        color="scenario",
+        title=f"{country} — Scenarios a / b / c"
+    )
+    fig_dark = apply_theme(fig_dark_base, DARK)
+
+    light_divs.append(to_html(
+        fig_light,
+        full_html=False,
+        include_plotlyjs="cdn" if include_js else False
+    ))
+    include_js = False
+
+    dark_divs.append(to_html(
+        fig_dark,
+        full_html=False,
+        include_plotlyjs=False
+    ))
+
+# ============================
+# FINAL HTML (NO FRAMES)
+# ============================
+html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Country Scenario Charts</title>
+
+<style>
+  :root {{
+    --page-bg: {LIGHT["page_bg"]};
+    --text: {LIGHT["text"]};
+  }}
+
+  body {{
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--text);
+    transition: background 0.2s ease, color 0.2s ease;
+  }}
+
+  h1 {{
+    text-align: center;
+    margin-bottom: 20px;
+  }}
+
+  .grid {{
+    max-width: 1400px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }}
+
+  @media (max-width: 1100px) {{
+    .grid {{
+      grid-template-columns: 1fr;
+    }}
+  }}
+
+  /* NO FRAMES */
+  .plot-wrapper {{
+    padding: 0;
+    margin: 0;
+  }}
+
+  .theme-light .plot-dark {{ display: none; }}
+  .theme-dark .plot-light {{ display: none; }}
+
+  /* VISIBLE TOGGLE BUTTON */
+  .theme-toggle {{
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 9999;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(0,0,0,0.3);
+    font-weight: 600;
+    cursor: pointer;
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }}
+
+  .theme-dark .theme-toggle {{
+    background: #111827;
+    color: #f9fafb;
+    border-color: rgba(255,255,255,0.35);
+  }}
+</style>
+</head>
+
+<body class="theme-light" id="page">
+
+<button class="theme-toggle" id="toggleBtn">🌙 Dark Mode</button>
+
+<h1>Country Scenario Line Charts</h1>
+
+<div class="grid">
+  <div class="plot-wrapper">
+    <div class="plot-light">{light_divs[0]}</div>
+    <div class="plot-dark">{dark_divs[0]}</div>
+  </div>
+
+  <div class="plot-wrapper">
+    <div class="plot-light">{light_divs[1]}</div>
+    <div class="plot-dark">{dark_divs[1]}</div>
+  </div>
+</div>
+
+<script>
+  const page = document.getElementById("page");
+  const btn = document.getElementById("toggleBtn");
+
+  const LIGHT = {{
+    bg: "{LIGHT["page_bg"]}",
+    text: "{LIGHT["text"]}"
+  }};
+
+  const DARK = {{
+    bg: "{DARK["page_bg"]}",
+    text: "{DARK["text"]}"
+  }};
+
+  function applyTheme(mode) {{
+    const t = mode === "dark" ? DARK : LIGHT;
+    document.documentElement.style.setProperty("--page-bg", t.bg);
+    document.documentElement.style.setProperty("--text", t.text);
+    btn.innerHTML = mode === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+  }}
+
+  applyTheme("light");
+
+  btn.onclick = () => {{
+    if (page.classList.contains("theme-light")) {{
+      page.classList.remove("theme-light");
+      page.classList.add("theme-dark");
+      applyTheme("dark");
+    }} else {{
+      page.classList.remove("theme-dark");
+      page.classList.add("theme-light");
+      applyTheme("light");
+    }}
+  }};
+</script>
+
+</body>
+</html>
+"""
+
+# ============================
+# SAVE FILE
+# ============================
+output_path = "final_borderless_light_dark_dashboard.html"
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write(html)
+
+print("Saved:", output_path)
+
+# ===============================================================================
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+# ----------------------------
+# Sample data
+# ----------------------------
+dates = pd.date_range("2024-01-01", periods=30, freq="D")
+df = pd.DataFrame({
+    "date": dates,
+    "value": np.cumsum(np.random.randn(30)),
+    "series": "A"
+}).sort_values("date")
+
+cutoff_date = pd.to_datetime("2024-01-15")
+
+# Solid part includes cutoff
+df_before = df[df["date"] <= cutoff_date].copy()
+
+# Dashed part starts after cutoff...
+df_after = df[df["date"] > cutoff_date].copy()
+
+# ...but prepend the last "before" point to CONNECT the line
+if not df_before.empty:
+    last_point = df_before.iloc[[-1]]
+    df_after = pd.concat([last_point, df_after], ignore_index=True)
+
+# Base figure (solid)
+fig = px.line(df_before, x="date", y="value", color="series",
+              title="Continuous line: solid before cutoff, dashed after")
+
+# Add dashed continuation
+if not df_after.empty:
+    fig_after = px.line(df_after, x="date", y="value", color="series")
+    for tr in fig_after.data:
+        tr.line.dash = "dash"
+        fig.add_trace(tr)
+
+# Cutoff vertical line (compatible with older Plotly)
+fig.add_shape(
+    type="line",
+    x0=cutoff_date, x1=cutoff_date,
+    y0=0, y1=1,
+    xref="x", yref="paper",
+    line=dict(width=2, dash="dot")
+)
+
+fig.add_annotation(
+    x=cutoff_date, y=1,
+    xref="x", yref="paper",
+    text=f"Cutoff: {cutoff_date.date()}",
+    showarrow=False,
+    yanchor="bottom"
+)
+
+fig.update_layout(template="plotly_white")
+fig.show()
+
+
