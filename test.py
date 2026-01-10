@@ -1,205 +1,266 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-import webbrowser
+# Retry: Create an HTML with two line charts next to each other (2-column layout)
+import pandas as pd
+import numpy as np
+import plotly.express as px
+from plotly.io import to_html
 
-# ================= COLORS =================
-CITI_BLUE = "#003B70"
-CITI_BLUE_DARK = "#002A4E"
-CITI_RED = "#EE1C25"
-WHITE = "#FFFFFF"
-BG = "#F8FAFC"
-TEXT = "#0F172A"
-MUTED = "#475569"
+# ============================
+# THEMES
+# ============================
+LIGHT = {
+    "page_bg": "#f5f5f5",
+    "text": "#111827",
+    "grid": "#E5E7EB",
+    "plot_bg": "#ffffff",
+    "paper_bg": "#ffffff",
+}
 
-SUBMIT_BG = "#0B5ED7"
-SUBMIT_HOVER = "#0A58CA"
+DARK = {
+    "page_bg": "#0B1220",
+    "text": "#E5E7EB",
+    "grid": "#2A3441",
+    "plot_bg": "#0E1117",
+    "paper_bg": "#0E1117",
+}
 
-GREEN_BG = "#5FB878"
-GREEN_HOVER = "#4FA96A"
+# ============================
+# SAMPLE DATA
+# ============================
+np.random.seed(1)
 
-SECONDARY_HOVER_BG = "#EEF2F7"
+countries = ["Poland", "Germany"]
+scenarios = ["a", "b", "c"]
+dates = pd.date_range("2024-01-01", periods=60, freq="D")
 
-# ================= COLOR ANIMATION HELPERS =================
-def hex_to_rgb(h):
-    h = h.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+rows = []
+for country in countries:
+    base = np.linspace(10, 25, len(dates)) + np.random.normal(0, 1.0, len(dates))
+    for scen in scenarios:
+        shift = {"a": 0, "b": 3, "c": -2}[scen]
+        for d, v in zip(dates, base + shift):
+            rows.append({
+                "country": country,
+                "date": d,
+                "scenario": scen,
+                "value": float(v)
+            })
 
-def rgb_to_hex(rgb):
-    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+df = pd.DataFrame(rows)
 
-def lerp(a, b, t):
-    return int(a + (b - a) * t)
+# ============================
+# APPLY THEME TO FIGURE
+# ============================
+def apply_theme(fig, theme):
+    fig.update_layout(
+        plot_bgcolor=theme["plot_bg"],
+        paper_bgcolor=theme["paper_bg"],
+        font=dict(color=theme["text"]),
+        xaxis=dict(
+            type="date",
+            rangeslider=dict(visible=True),
+            showgrid=True,
+            gridcolor=theme["grid"],
+            showline=False,
+            ticks="",
+            zeroline=False,
+        ),
+        yaxis=dict(
+            title="Value",
+            showgrid=True,
+            gridcolor=theme["grid"],
+            showline=False,
+            ticks="",
+            zeroline=False,
+            fixedrange=False
+        ),
+        legend=dict(
+            title="Scenario",
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color=theme["text"]),
+        ),
+        margin=dict(l=30, r=20, t=60, b=40),
+    )
+    return fig
 
-def lerp_color(c1, c2, t):
-    r1, g1, b1 = hex_to_rgb(c1)
-    r2, g2, b2 = hex_to_rgb(c2)
-    return rgb_to_hex((lerp(r1, r2, t), lerp(g1, g2, t), lerp(b1, b2, t)))
+# ============================
+# BUILD FIGURES (LIGHT + DARK)
+# ============================
+light_divs, dark_divs = [], []
+include_js = True
 
-# ================= ANIMATED BUTTON =================
-class AnimatedButton(tk.Button):
-    def __init__(self, master, normal_bg, hover_bg, **kwargs):
-        super().__init__(
-            master,
-            bg=normal_bg,
-            fg=WHITE,
-            activebackground=hover_bg,
-            activeforeground=WHITE,
-            bd=0,
-            **kwargs
-        )
-        self.normal_bg = normal_bg
-        self.hover_bg = hover_bg
-        self.t = 0
-        self.after_id = None
-        self.bind("<Enter>", lambda e: self.animate(1))
-        self.bind("<Leave>", lambda e: self.animate(0))
+for country, dff in df.groupby("country"):
+    base_fig = px.line(
+        dff,
+        x="date",
+        y="value",
+        color="scenario",
+        title=f"{country} — Scenarios a / b / c"
+    )
 
-    def animate(self, target):
-        if self.after_id:
-            self.after_cancel(self.after_id)
-        self.step(target)
+    fig_light = apply_theme(base_fig, LIGHT)
 
-    def step(self, target):
-        if abs(self.t - target) < 0.01:
-            self.t = target
-            self.configure(bg=lerp_color(self.normal_bg, self.hover_bg, self.t))
-            return
-        self.t += 0.1 if self.t < target else -0.1
-        self.configure(bg=lerp_color(self.normal_bg, self.hover_bg, self.t))
-        self.after_id = self.after(15, lambda: self.step(target))
+    fig_dark_base = px.line(
+        dff,
+        x="date",
+        y="value",
+        color="scenario",
+        title=f"{country} — Scenarios a / b / c"
+    )
+    fig_dark = apply_theme(fig_dark_base, DARK)
 
-# ================= SECONDARY BUTTON WRAPPER =================
-class HoverFrameButton(tk.Frame):
-    def __init__(self, master, text, command):
-        super().__init__(master, bg=WHITE)
-        self.btn = ttk.Button(self, text=text, command=command)
-        self.btn.pack(ipadx=6, ipady=2)
-        self.bind("<Enter>", lambda e: self.config(bg=SECONDARY_HOVER_BG))
-        self.bind("<Leave>", lambda e: self.config(bg=WHITE))
-        self.btn.bind("<Enter>", lambda e: self.config(bg=SECONDARY_HOVER_BG))
-        self.btn.bind("<Leave>", lambda e: self.config(bg=WHITE))
+    light_divs.append(to_html(
+        fig_light,
+        full_html=False,
+        include_plotlyjs="cdn" if include_js else False
+    ))
+    include_js = False
 
-# ================= MAIN APP =================
-class ScenarioManagerTool(tk.Tk):
-    def __init__(self):
-        super().__init__()
+    dark_divs.append(to_html(
+        fig_dark,
+        full_html=False,
+        include_plotlyjs=False
+    ))
 
-        self.title("Scenario Manager Tool")
-        self.geometry("780x500")
-        self.configure(bg=BG)
-        self.attributes("-alpha", 1.0)
+# ============================
+# FINAL HTML (NO FRAMES)
+# ============================
+html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Country Scenario Charts</title>
 
-        self._style()
-        self._ui()
+<style>
+  :root {{
+    --page-bg: {LIGHT["page_bg"]};
+    --text: {LIGHT["text"]};
+  }}
 
-    def _style(self):
-        style = ttk.Style(self)
-        style.theme_use("vista" if "vista" in style.theme_names() else "clam")
-        style.configure("TLabel", font=("Segoe UI", 11))
-        style.configure("Citi.TEntry", padding=7)
+  body {{
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: var(--page-bg);
+    color: var(--text);
+    transition: background 0.2s ease, color 0.2s ease;
+  }}
 
-    def _ui(self):
-        # ===== HEADER =====
-        header = tk.Frame(self, bg=CITI_BLUE, height=90)
-        header.pack(fill="x")
-        header.pack_propagate(False)
+  h1 {{
+    text-align: center;
+    margin-bottom: 20px;
+  }}
 
-        self.logo_img = tk.PhotoImage(file="citi_logo.png")
-        tk.Label(header, image=self.logo_img, bg=CITI_BLUE)\
-            .place(x=12, rely=0.35, anchor="w")
+  .grid {{
+    max-width: 1400px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }}
 
-        tk.Label(
-            header,
-            text="Scenario Manager Tool",
-            bg=CITI_BLUE,
-            fg=WHITE,
-            font=("Segoe UI", 13, "bold"),
-        ).place(x=12, rely=0.72, anchor="w")
+  @media (max-width: 1100px) {{
+    .grid {{
+      grid-template-columns: 1fr;
+    }}
+  }}
 
-        tk.Frame(self, bg=CITI_RED, height=3).pack(fill="x")
+  /* NO FRAMES */
+  .plot-wrapper {{
+    padding: 0;
+    margin: 0;
+  }}
 
-        # ===== CARD =====
-        card = tk.Frame(self, bg=WHITE)
-        card.pack(fill="both", expand=True, padx=26, pady=20)
+  .theme-light .plot-dark {{ display: none; }}
+  .theme-dark .plot-light {{ display: none; }}
 
-        tk.Label(card, text="User Details", bg=WHITE, fg=CITI_BLUE,
-                 font=("Segoe UI", 22, "bold"))\
-            .grid(row=0, column=0, columnspan=2, sticky="w", padx=22)
+  /* VISIBLE TOGGLE BUTTON */
+  .theme-toggle {{
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 9999;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(0,0,0,0.3);
+    font-weight: 600;
+    cursor: pointer;
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }}
 
-        tk.Label(card, text="Please complete the fields below.",
-                 bg=WHITE, fg=MUTED, font=("Segoe UI", 12))\
-            .grid(row=1, column=0, columnspan=2, sticky="w", padx=22, pady=(0, 16))
+  .theme-dark .theme-toggle {{
+    background: #111827;
+    color: #f9fafb;
+    border-color: rgba(255,255,255,0.35);
+  }}
+</style>
+</head>
 
-        ttk.Separator(card).grid(row=2, column=0, columnspan=2, sticky="ew", padx=22)
+<body class="theme-light" id="page">
 
-        self.first_name = tk.StringVar()
-        self.last_name = tk.StringVar()
-        self.email = tk.StringVar()
+<button class="theme-toggle" id="toggleBtn">🌙 Dark Mode</button>
 
-        fields = [
-            ("First name", self.first_name),
-            ("Last name", self.last_name),
-            ("Email", self.email),
-        ]
+<h1>Country Scenario Line Charts</h1>
 
-        for i, (label, var) in enumerate(fields, start=3):
-            tk.Label(card, text=label, bg=WHITE, fg=CITI_BLUE_DARK,
-                     font=("Segoe UI", 12))\
-                .grid(row=i, column=0, sticky="w", padx=22, pady=10)
+<div class="grid">
+  <div class="plot-wrapper">
+    <div class="plot-light">{light_divs[0]}</div>
+    <div class="plot-dark">{dark_divs[0]}</div>
+  </div>
 
-            ttk.Entry(card, textvariable=var, style="Citi.TEntry")\
-                .grid(row=i, column=1, sticky="ew", padx=(10, 22), pady=10)
+  <div class="plot-wrapper">
+    <div class="plot-light">{light_divs[1]}</div>
+    <div class="plot-dark">{dark_divs[1]}</div>
+  </div>
+</div>
 
-        card.columnconfigure(1, weight=1)
+<script>
+  const page = document.getElementById("page");
+  const btn = document.getElementById("toggleBtn");
 
-        ttk.Separator(card).grid(row=6, column=0, columnspan=2, sticky="ew", padx=22, pady=18)
+  const LIGHT = {{
+    bg: "{LIGHT["page_bg"]}",
+    text: "{LIGHT["text"]}"
+  }};
 
-        contact = tk.Label(
-            card, text="Contact us", bg=WHITE, fg="#0B5ED7",
-            cursor="hand2", font=("Segoe UI", 11, "underline")
-        )
-        contact.grid(row=7, column=0, sticky="w", padx=22)
-        contact.bind("<Button-1>", lambda e: webbrowser.open("mailto:tv@citi.com"))
+  const DARK = {{
+    bg: "{DARK["page_bg"]}",
+    text: "{DARK["text"]}"
+  }};
 
-        # ===== BUTTONS =====
-        btns = tk.Frame(card, bg=WHITE)
-        btns.grid(row=8, column=0, columnspan=2, sticky="e", padx=22, pady=20)
+  function applyTheme(mode) {{
+    const t = mode === "dark" ? DARK : LIGHT;
+    document.documentElement.style.setProperty("--page-bg", t.bg);
+    document.documentElement.style.setProperty("--text", t.text);
+    btn.innerHTML = mode === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+  }}
 
-        AnimatedButton(
-            btns, GREEN_BG, GREEN_HOVER,
-            text="Example", font=("Segoe UI", 12, "bold"),
-            padx=26, pady=10, command=self.fill_example
-        ).grid(row=0, column=0, padx=8)
+  applyTheme("light");
 
-        AnimatedButton(
-            btns, SUBMIT_BG, SUBMIT_HOVER,
-            text="Submit", font=("Segoe UI", 12, "bold"),
-            padx=26, pady=10, command=self.submit
-        ).grid(row=0, column=1, padx=8)
+  btn.onclick = () => {{
+    if (page.classList.contains("theme-light")) {{
+      page.classList.remove("theme-light");
+      page.classList.add("theme-dark");
+      applyTheme("dark");
+    }} else {{
+      page.classList.remove("theme-dark");
+      page.classList.add("theme-light");
+      applyTheme("light");
+    }}
+  }};
+</script>
 
-        HoverFrameButton(btns, "Clear", self.clear)\
-            .grid(row=0, column=2, padx=8)
+</body>
+</html>
+"""
 
-        HoverFrameButton(btns, "Exit", self.destroy)\
-            .grid(row=0, column=3, padx=8)
+# ============================
+# SAVE FILE
+# ============================
+output_path = "final_borderless_light_dark_dashboard.html"
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write(html)
 
-    # ===== ACTIONS =====
-    def fill_example(self):
-        self.first_name.set("Test")
-        self.last_name.set("User")
-        self.email.set("test.user@citi.com")
-
-    def submit(self):
-        if not all([self.first_name.get(), self.last_name.get(), self.email.get()]):
-            messagebox.showwarning("Missing data", "Please fill in all fields.")
-            return
-        messagebox.showinfo("Submitted", "Scenario data submitted successfully.")
-
-    def clear(self):
-        self.first_name.set("")
-        self.last_name.set("")
-        self.email.set("")
-
-
-if __name__ == "__main__":
-    ScenarioManagerTool().mainloop()
+print("Saved:", output_path)
