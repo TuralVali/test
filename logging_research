@@ -1,0 +1,146 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jan  7 21:52:44 2026
+
+@author: Tural
+"""
+
+import logging 
+# https://docs.python.org/3/library/logging.html#logrecord-attributes
+# logging.basicConfig() #basic config. 
+# logger = logging.getLogger(__name__)
+
+# Next, we should understand the concept of log levels. Every logger instance can be assigned a log level. Python knows 5 levels:
+
+# DEBUG - by default not going to console
+# INFO - by default not going to console
+# WARNING
+# ERROR
+# CRITICAL
+
+logging.debug("no print") #10
+logging.info("no print") #20
+logging.warning("printed") #30
+logging.error("printed") #40
+logging.critical("printed") #50
+# logger.setLevel(logging.INFO)
+# logger.info("This is an info message")
+
+logger = logging.getLogger(__name__)
+stream_handler = logging.StreamHandler() # message to output, to console
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+stream_handler.setFormatter(formatter)    
+logger.addHandler(stream_handler)           
+stream_handler.setLevel(logging.WARNING) #warning and above, i.e. +error and critical
+file_handler = logging.FileHandler("mylog.log")
+stream_handler.setLevel(logging.CRITICAL) #critical 
+logger.addHandler(file_handler)   
+
+
+logger.info("This message will not be processed by the handler")
+logger.warning("This message will be processed by the handler")
+
+# class JsonFormatter(logging.Formatter):
+#     def format(self, record: logging.LogRecord) -> str:
+#         return json.dumps({
+#         "time": record.asctime,
+#         "name": record.name,
+#         "level": record.levelname,
+#         "message": record.getMessage(),
+#     })
+
+# handler.setFormatter(JsonFormatter())
+
+try:
+    raise ValueError("this is val err")
+except:
+    logger.exception("this is an exception msg")
+
+# class CustomFilter(logging.Filter):
+#     def filter(self, record: logging.LogRecord) -> bool:
+#         return record.levelno >= logging.WARNING
+
+# logger.addFilter(CustomFilter())
+# def custom_filter(record: logging.LogRecord) -> bool:
+#     return record.levelno >= logging.WARNING
+# logger.addFilter(custom_filter)
+
+import logging
+
+parent = logging.getLogger("parent")
+parent_stream_handler = logging.StreamHandler()
+parent_stream_handler.setFormatter(logging.Formatter("PARENT - %(message)s"))
+parent.addHandler(parent_stream_handler)
+
+child = logging.getLogger("parent.child")
+child_stream_handler = logging.StreamHandler()
+child_stream_handler.setFormatter(logging.Formatter("CHILD - %(message)s"))
+child.addHandler(child_stream_handler)
+
+child.warning("This is a warning message")
+
+
+config_dict = {
+    "version": 1,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "app.log",
+            "formatter": "default",
+        },
+    },
+    "loggers": {
+        "my_app": {
+            "level": "WARNING",
+            "handlers": ["file"],
+            "propagate": False,
+        },
+        "my_app.database": {
+            "level": "WARNING",
+            "handlers": ["console"],
+        },
+    },
+}
+
+logging.config.dictConfig(config_dict)
+
+logger = logging.getLogger("my_app.database")
+logger.warning("This is a warning message")
+
+
+#==========================================================================================
+
+x = 2
+logging.basicConfig(level = logging.INFO, format = '%(asctime)s - %(levelname)s - %(message)s',
+                    datefmt="%Y-%m-%d %H:%M:%S")
+logging.warning(f'Value of x is {x}')
+
+try: 
+    1/0
+except ZeroDivisionError as e:
+    logging.exception("Haloo")
+
+import logging
+import sys
+
+logging.Formatter.default_msec_format = "%s"  # remove ".%(msecs)03d"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True,
+)
+
+logging.warning("Value of x is 2")
+
