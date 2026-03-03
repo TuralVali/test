@@ -1,0 +1,93 @@
+# /etc/profile.d/tv_conda_manager.sh
+# Provides: conda_on / conda_off for bash + ksh
+# Behavior:
+# - conda_on  : enables conda in CURRENT shell (conda activate works)
+# - conda_off : disables conda in CURRENT shell (conda --version fails)
+# Adjust CONDA_ROOT to your installation root.
+
+CONDA_ROOT="/opt/middleware/miniconda/25.5.1_py3.13.5"
+
+# Only define functions for interactive shells
+case $- in
+  *i*) ;;
+  *) return 0 ;;
+esac
+
+_conda_detect_shell() {
+  # output: bash | ksh | posix
+  if [ -n "${BASH_VERSION-}" ]; then
+    printf "%s" "bash"
+  elif [ -n "${KSH_VERSION-}" ]; then
+    printf "%s" "ksh"
+  else
+    printf "%s" "posix"
+  fi
+}
+
+conda_on() {
+  if [ ! -x "$CONDA_ROOT/bin/conda" ]; then
+    echo "conda_on: conda not found at $CONDA_ROOT/bin/conda" >&2
+    return 1
+  fi
+
+  # Save original shell state once (so conda_off can fully undo)
+  if [ -z "${TV_CONDA_OLD_PATH+x}" ]; then
+    TV_CONDA_OLD_PATH="$PATH"
+    export TV_CONDA_OLD_PATH
+  fi
+  if [ -z "${TV_CONDA_OLD_PS1+x}" ] && [ -n "${PS1-}" ]; then
+    TV_CONDA_OLD_PS1="$PS1"
+    export TV_CONDA_OLD_PS1
+  fi
+
+  _sh="$(_conda_detect_shell)"
+
+  # Evaluate conda hook for the current shell
+  _hook="$("$CONDA_ROOT/bin/conda" "shell.${_sh}" hook 2>/dev/null)"
+  if [ -z "$_hook" ]; then
+    echo "conda_on: conda hook for shell.${_sh} returned empty. (Conda may not support this shell build.)" >&2
+    unset _sh _hook
+    return 1
+  fi
+  eval "$_hook"
+  unset _hook _sh
+
+  # Do NOT auto-activate base (best-effort; doesn’t error if config locked)
+  "$CONDA_ROOT/bin/conda" config --set auto_activate_base false >/dev/null 2>&1 || true
+
+  # Ensure command lookup refresh
+  hash -r 2>/dev/null || true
+
+  echo "Conda enabled (no env activated)."
+  return 0
+}
+
+conda_off() {
+  # Deactivate any active env (ignore errors)
+  command -v conda >/dev/null 2>&1 && conda deactivate >/dev/null 2>&1 || true
+
+  # Restore PATH exactly to pre-conda_on state if available
+  if [ -n "${TV_CONDA_OLD_PATH-}" ]; then
+    PATH="$TV_CONDA_OLD_PATH"
+    export PATH
+    unset TV_CONDA_OLD_PATH
+  fi
+
+  # Restore PS1 if saved
+  if [ -n "${TV_CONDA_OLD_PS1-}" ]; then
+    PS1="$TV_CONDA_OLD_PS1"
+    unset TV_CONDA_OLD_PS1
+  fi
+
+  # Remove conda shell function(s) and helpers
+  unset -f conda __conda_activate __conda_hashr __conda_setup __conda_reactivate 2>/dev/null || true
+
+  # Remove common conda variables
+  unset CONDA_EXE CONDA_PREFIX CONDA_PY CONDA_DEFAULT_ENV CONDA_SHLVL CONDA_PROMPT_MODIFIER 2>/dev/null || true
+
+  # Refresh command hash so "conda" is not cached
+  hash -r 2>/dev/null || true
+
+  echo "Conda disabled for this shell."
+  return 0
+}
