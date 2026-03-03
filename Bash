@@ -1,0 +1,41 @@
+# tv_conda_manager.sh - conda_on/conda_off for bash + ksh
+
+CONDA_ROOT="/opt/middleware/miniconda/25.5.1_py3.13.5"
+
+conda_on() {
+  # Detect shell for conda hook
+  _shell="posix"
+  [ -n "${BASH_VERSION-}" ] && _shell="bash"
+  [ -n "${KSH_VERSION-}" ] && _shell="ksh"
+
+  if [ ! -x "$CONDA_ROOT/bin/conda" ]; then
+    echo "conda_on: conda not found at $CONDA_ROOT/bin/conda"
+    return 1
+  fi
+
+  # Preferred: conda shell hook (works properly per-shell)
+  _hook="$("$CONDA_ROOT/bin/conda" "shell.${_shell}" hook 2>/dev/null)"
+  if [ -n "$_hook" ]; then
+    eval "$_hook"
+    unset _hook _shell
+    echo "Conda enabled (no env activated)."
+    return 0
+  fi
+
+  # Fallback: source conda.sh (usually works for bash; may work for some ksh builds)
+  if [ -f "$CONDA_ROOT/etc/profile.d/conda.sh" ]; then
+    . "$CONDA_ROOT/etc/profile.d/conda.sh"
+    unset _shell
+    echo "Conda enabled (no env activated)."
+    return 0
+  fi
+
+  echo "conda_on: failed to initialize conda (no hook and no conda.sh)."
+  return 1
+}
+
+conda_off() {
+  # Deactivate if possible (ignore errors)
+  command -v conda >/dev/null 2>&1 && conda deactivate >/dev/null 2>&1 || true
+  echo "Conda deactivated (if active)."
+}
