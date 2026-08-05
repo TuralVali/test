@@ -1,0 +1,23 @@
+Minimize AI Credit usage.
+
+Read only required files.
+Avoid repository-wide searches unless requested.
+Reuse existing project patterns.
+Modify only files relevant to the task.
+Do not rewrite unchanged code.
+Stop when the requested task is complete.
+Ask for missing context instead of making broad assumptions.
+
+
+# AI Credit Usage Policy
+
+Assume that non-interactive runs are expected to use a maximum of 10 AI credits.
+
+Work accordingly:
+- Keep AI usage as low as practical.
+- Prefer incremental, focused changes over large, monolithic tasks.
+- If the available AI credit budget is exhausted before completion, stop and report:
+  - what was completed,
+  - what remains,
+  - and the recommended next step.
+- Never assume the credit budget can be increased unless explicitly instructed.
