@@ -1,0 +1,22 @@
+R to Python Migration Rules
+
+Translate R into Python with full semantic and operational equivalence. The Python implementation must perform the same operations, follow the same logic, and produce the same intended outcome as the R implementation.
+
+- Treat the R implementation as the source of truth. Do not redesign, simplify, "correct", or reinterpret its logic.
+- Never change the logic during translation. Every operation performed in R must have the same purpose, effect, and outcome in Python.
+- Preserve the original sequence of transformations where it affects the result.
+- Use pandas + NumPy and write idiomatic Python rather than code that imitates R syntax.
+- Preserve "filter", "mutate", "group_by", "summarise", joins, reshaping, sorting, and conditional logic exactly.
+- "NA" means missing, not zero. If R produces "NA", Python must preserve it as "NaN"/"pd.NA". Never substitute zero unless explicitly done by the R code.
+- Account for R's 1-based indexing versus Python's 0-based indexing.
+- Preserve join keys, join types, duplicate behavior, column names, ordering, data types, dates, and categorical behavior.
+- Use "groupby().agg()" for group-level reductions and "groupby().transform()" when results must remain aligned with original rows.
+- For "pivot_wider", use "pivot()" when keys are unique; otherwise use "pivot_table()" with the same intended aggregation.
+- Avoid unnecessary ".apply()", loops, conversions, or abstractions when a direct pandas/NumPy equivalent exists.
+- For statistical calculations, reproduce the same R methodology, formula, parameters, and assumptions rather than using a merely similar Python function.
+- Do not introduce optimizations or behavioral changes unless explicitly requested.
+- Keep the translated code concise, readable, and maintainable.
+- If exact behavior is ambiguous, do not guess or alter the logic; state the assumption.
+- When practical, validate that Python and R produce equivalent shapes, values, missing values, duplicates, and outputs.
+
+Primary rule: Translate the implementation, not the intent. Preserve the R logic and operational outcome exactly.
