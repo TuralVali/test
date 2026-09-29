@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Dependency Explorer — calculate_pd</title>
+
+<!--
+  Preview template for the Dependency HTML Report Agent.
+
+  The real agent should replace the demo graph data with the
+  analysis produced by the Python Dependency Scanner Agent and
+  may embed/bundle the chosen graph library for offline use.
+-->
+
+<style>
+:root {
+  --bg: #0b1020;
+  --panel: #111827;
+  --panel-2: #172033;
+  --border: #263247;
+  --text: #e7edf7;
+  --muted: #91a0b8;
+  --accent: #7dd3fc;
+  --target: #a78bfa;
+  --internal: #38bdf8;
+  --external: #34d399;
+  --builtin: #94a3b8;
+  --unknown: #f59e0b;
+  --danger: #fb7185;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(125, 211, 252, .08), transparent 28%),
+    radial-gradient(circle at 85% 90%, rgba(167, 139, 250, .08), transparent 28%),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(17, 24, 39, .88);
+  backdrop-filter: blur(16px);
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -.02em;
+}
+
+.subtitle {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  min-width: 82px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(23, 32, 51, .8);
+}
+
+.stat strong {
+  display: block;
+  font-size: 15px;
+}
+
+.stat span {
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 310px;
+}
+
+.sidebar,
+.details {
+  min-height: 0;
+  overflow: auto;
+  background: rgba(17, 24, 39, .78);
+}
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 16px;
+}
+
+.details {
+  border-left: 1px solid var(--border);
+  padding: 18px;
+}
+
+.section {
+  margin-bottom: 22px;
+}
+
+.section h2 {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.search {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 9px;
+  color: var(--text);
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #40506a;
+  background: #1d293d;
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.graph {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.graph-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-graph {
+  width: min(850px, 92%);
+  height: 78%;
+  position: relative;
+}
+
+.node {
+  position: absolute;
+  width: 150px;
+  padding: 11px 12px;
+  border: 1px solid;
+  border-radius: 12px;
+  background: #111827;
+  box-shadow: 0 12px 28px rgba(0,0,0,.25);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.node:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 35px rgba(0,0,0,.35);
+}
+
+.node .name {
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.node .badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.target { border-color: var(--target); }
+.target .badge { color: var(--target); background: rgba(167,139,250,.12); }
+
+.internal { border-color: var(--internal); }
+.internal .badge { color: var(--internal); background: rgba(56,189,248,.12); }
+
+.external { border-color: var(--external); }
+.external .badge { color: var(--external); background: rgba(52,211,153,.12); }
+
+.unknown { border-color: var(--unknown); }
+.unknown .badge { color: var(--unknown); background: rgba(245,158,11,.12); }
+
+.line {
+  position: absolute;
+  height: 2px;
+  background: #53627b;
+  transform-origin: left center;
+  opacity: .75;
+}
+
+.arrow {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #53627b;
+  border-top: 2px solid #53627b;
+  transform: rotate(45deg);
+}
+
+.details-title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.details-badge {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  color: var(--internal);
+  background: rgba(56,189,248,.12);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.detail {
+  margin-top: 18px;
+}
+
+.detail label {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 5px;
+}
+
+.detail code,
+.source {
+  display: block;
+  color: #cbd5e1;
+  background: #0a0f1c;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px;
+  font-size: 11px;
+  overflow: auto;
+}
+
+footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  background: rgba(17, 24, 39, .9);
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .details {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  body {
+    overflow: auto;
+  }
+
+  .app {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    min-height: 700px;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .graph {
+    min-height: 600px;
+  }
+
+  .title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="title-row">
+    <div>
+      <h1>Python Dependency Explorer</h1>
+      <div class="subtitle">
+        <strong>calculate_pd</strong>
+        · src/models/pd_model.py
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><strong>8</strong><span>Nodes</span></div>
+      <div class="stat"><strong>7</strong><span>Edges</span></div>
+      <div class="stat"><strong>5</strong><span>Internal</span></div>
+      <div class="stat"><strong>2</strong><span>External</span></div>
+      <div class="stat"><strong>4</strong><span>Depth</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <aside class="sidebar">
+
+    <div class="section">
+      <h2>Search</h2>
+      <input class="search" placeholder="Search dependencies..." id="search">
+    </div>
+
+    <div class="section">
+      <h2>Controls</h2>
+      <div class="controls">
+        <button onclick="fit()">Fit</button>
+        <button onclick="reset()">Reset</button>
+        <button onclick="zoomIn()">Zoom +</button>
+        <button onclick="zoomOut()">Zoom −</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Direction</h2>
+      <div class="controls">
+        <button>Downstream</button>
+        <button>Upstream</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Filters</h2>
+
+      <label class="filter">
+        <input type="checkbox" checked>
+        Internal
+      </label>
+
+      <label class="filter">
+        <input type="checkbox" checked>
+        External
+      </label>
+
+      <label class="filter">
+        <input type="checkbox">
+        Builtin
+      </label>
+
+      <label class="filter">
+        <input type="checkbox" checked>
+        Unknown
+      </label>
+    </div>
+
+    <div class="section">
+      <h2>Layout</h2>
+      <div class="controls">
+        <button>Hierarchical</button>
+        <button>Radial</button>
+      </div>
+    </div>
+
+  </aside>
+
+  <main class="graph">
+    <div class="graph-inner">
+
+      <div class="demo-graph">
+
+        <div class="node target"
+             style="left:38%;top:2%"
+             onclick="selectNode('calculate_pd')">
+          <div class="name">calculate_pd</div>
+          <div class="badge">TARGET</div>
+        </div>
+
+        <div class="node internal"
+             style="left:5%;top:34%"
+             onclick="selectNode('prepare_features')">
+          <div class="name">prepare_features</div>
+          <div class="badge">INTERNAL</div>
+        </div>
+
+        <div class="node internal"
+             style="left:38%;top:34%"
+             onclick="selectNode('calculate_score')">
+          <div class="name">calculate_score</div>
+          <div class="badge">INTERNAL</div>
+        </div>
+
+        <div class="node internal"
+             style="left:71%;top:34%"
+             onclick="selectNode('calibrate')">
+          <div class="name">calibrate</div>
+          <div class="badge">INTERNAL</div>
+        </div>
+
+        <div class="node external"
+             style="left:29%;top:68%"
+             onclick="selectNode('pandas_mean')">
+          <div class="name">pandas.DataFrame.mean</div>
+          <div class="badge">EXTERNAL</div>
+        </div>
+
+        <div class="node external"
+             style="left:62%;top:68%"
+             onclick="selectNode('numpy_exp')">
+          <div class="name">numpy.exp</div>
+          <div class="badge">EXTERNAL</div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <aside class="details">
+    <h2 class="details-title" id="detail-name">calculate_pd</h2>
+    <span class="details-badge">TARGET</span>
+
+    <div class="detail">
+      <label>Type</label>
+      <div>Function</div>
+    </div>
+
+    <div class="detail">
+      <label>File</label>
+      <code>src/models/pd_model.py</code>
+    </div>
+
+    <div class="detail">
+      <label>Line</label>
+      <div id="detail-line">42</div>
+    </div>
+
+    <div class="detail">
+      <label>Signature</label>
+      <code id="detail-signature">calculate_pd(df) → pd.Series</code>
+    </div>
+
+    <div class="detail">
+      <label>Source</label>
+      <pre class="source" id="detail-source">def calculate_pd(df):
+    df = prepare_features(df)
+    score = calculate_score(df)
+    return np.exp(calibrate(score))</pre>
+    </div>
+
+    <div class="detail">
+      <label>Dependencies</label>
+      <div id="detail-dependencies">3 direct dependencies</div>
+    </div>
+  </aside>
+
+</div>
+
+<footer>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--target)"></i>Target</span>
+    <span><i class="dot" style="background:var(--internal)"></i>Internal</span>
+    <span><i class="dot" style="background:var(--external)"></i>External</span>
+    <span><i class="dot" style="background:var(--builtin)"></i>Builtin</span>
+    <span><i class="dot" style="background:var(--unknown)"></i>Unknown</span>
+  </div>
+
+  <div>Static AST analysis · No source execution</div>
+</footer>
+
+</div>
+
+<script>
+function selectNode(name) {
+  const data = {
+    calculate_pd: {
+      type: "Function",
+      badge: "TARGET",
+      line: 42,
+      signature: "calculate_pd(df) → pd.Series",
+      dependencies: "3 direct dependencies"
+    },
+    prepare_features: {
+      type: "Function",
+      badge: "INTERNAL",
+      line: 18,
+      signature: "prepare_features(df)",
+      dependencies: "2 direct dependencies"
+    },
+    calculate_score: {
+      type: "Function",
+      badge: "INTERNAL",
+      line: 27,
+      signature: "calculate_score(df) → float",
+      dependencies: "1 direct dependency"
+    },
+    calibrate: {
+      type: "Function",
+      badge: "INTERNAL",
+      line: 11,
+      signature: "calibrate(score) → float",
+      dependencies: "0 direct dependencies"
+    },
+    pandas_mean: {
+      type: "External method",
+      badge: "EXTERNAL",
+      line: "—",
+      signature: "pandas.DataFrame.mean",
+      dependencies: "External dependency"
+    },
+    numpy_exp: {
+      type: "External function",
+      badge: "EXTERNAL",
+      line: "—",
+      signature: "numpy.exp",
+      dependencies: "External dependency"
+    }
+  };
+
+  const item = data[name] || data.calculate_pd;
+
+  document.getElementById("detail-name").textContent = name;
+  document.getElementById("detail-line").textContent = item.line;
+  document.getElementById("detail-signature").textContent = item.signature;
+  document.getElementById("detail-dependencies").textContent = item.dependencies;
+}
+
+function fit() {
+  document.querySelector(".demo-graph").style.transform = "scale(1)";
+}
+
+function reset() {
+  document.querySelector(".demo-graph").style.transform = "";
+}
+
+function zoomIn() {
+  const graph = document.querySelector(".demo-graph");
+  graph.style.transform = "scale(1.12)";
+}
+
+function zoomOut() {
+  const graph = document.querySelector(".demo-graph");
+  graph.style.transform = "scale(.88)";
+}
+
+document.getElementById("search").addEventListener("input", function(e) {
+  const query = e.target.value.toLowerCase();
+
+  document.querySelectorAll(".node").forEach(node => {
+    const match = node.innerText.toLowerCase().includes(query);
+    node.style.opacity = !query || match ? "1" : ".18";
+  });
+});
+</script>
+
+</body>
+</html>
