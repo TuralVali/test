@@ -1,0 +1,395 @@
+Analyze all commits between:
+
+<OLD_COMMIT>.. <NEW_COMMIT>
+
+Summarize the actual functional changes.
+
+Group them into:
+- Model logic
+- Data/input changes
+- Configuration
+- Bug fixes
+- Refactoring
+- Performance
+- Tests
+- Documentation
+
+Ignore trivial formatting changes.
+
+For each functional change provide:
+- commit
+- file
+- function/class
+- old behavior
+- new behavior
+- potential impact
+=====÷===========
+
+
+pause
+
+
+Compare <OLD_COMMIT> and <NEW_COMMIT>.
+
+Identify every functional logic change.
+
+For each change:
+1. Explain what behavior changed.
+2. Identify existing tests that cover it.
+3. Identify missing test cases.
+4. Generate pytest tests for the missing cases.
+
+Do not modify production code.
+
+Use the existing repository testing conventions.
+
+
+
+≈=======
+
+
+The model output changed significantly after commit <NEW_COMMIT>.
+
+Compare:
+OLD commit: <OLD_COMMIT>
+NEW commit: <NEW_COMMIT>
+
+Analyze the code changes and identify which changes could explain the output difference.
+
+Focus on:
+- formulas
+- filters
+- population selection
+- missing-value treatment
+- joins
+- aggregation
+- parameters
+- transformations
+- model coefficients
+- random seeds
+
+Rank findings by evidence, not by speculation.
+
+
+Analyze the Git history of this model.
+
+Reconstruct how the model logic evolved from:
+<START_COMMIT>
+to:
+<END_COMMIT>
+
+Create a chronological history of major methodological changes.
+
+For each change:
+- date
+- commit
+- reason if available from commit message
+- old methodology
+- new methodology
+- affected components
+- potential model impact
+
+Do not invent reasons that are not supported by the Git history.
+
+
+
+
+=========
+Compare:
+
+branch A: <BRANCH_A>
+branch B: <BRANCH_B>
+
+Ignore:
+- formatting
+- comments
+- variable renaming
+- import ordering
+- pure refactoring
+
+Identify differences that can change model results.
+
+Categorize:
+- data
+- calculations
+- parameters
+- filtering
+- model methodology
+- validation
+- output
+- configuration
+
+Provide a final list of result-affecting differences.
+
+
+
+
+
+
+
+
+You are a senior Python software engineer and quantitative risk-model reviewer.
+
+I will provide:
+1. A local Git repository/folder
+2. BASE_COMMIT
+3. TARGET_COMMIT
+
+Your task is to perform a detailed semantic comparison between BASE_COMMIT and TARGET_COMMIT.
+
+Inputs:
+
+REPOSITORY:
+<REPOSITORY_PATH>
+
+BASE_COMMIT:
+<BASE_COMMIT_HASH>
+
+TARGET_COMMIT:
+<TARGET_COMMIT_HASH>
+
+Instructions:
+
+1. Compare BASE_COMMIT against TARGET_COMMIT using Git.
+
+2. Identify all changed files.
+
+3. Focus particularly on Python files (*.py), but also inspect configuration,
+   JSON/YAML/CSV or other files if they can affect application/model behaviour.
+
+4. For every changed Python file:
+   - inspect the Git diff;
+   - identify changed functions/classes;
+   - understand the surrounding code where necessary;
+   - determine whether the change affects program/model logic.
+
+5. Do NOT assume that every code change is a logic change.
+
+Classify each change into one of:
+
+A. NO LOGIC CHANGE
+Examples:
+- formatting
+- comments/docstrings
+- imports that do not affect behaviour
+- variable/function renaming without behavioural impact
+- code restructuring/refactoring producing equivalent behaviour
+- type annotations
+- logging
+- cosmetic changes
+
+B. LOGIC CHANGE
+Examples:
+- changed calculations
+- changed conditions
+- changed filtering
+- changed treatment of missing values
+- changed default values
+- changed thresholds
+- changed model parameters
+- changed formulas
+- changed input/output behaviour
+- changed aggregation
+- changed sorting where it affects downstream results
+- changed exception/error handling that changes behaviour
+- changed data transformations
+- changed statistical/model methodology
+
+C. POTENTIAL LOGIC CHANGE
+Use this when the effect cannot be determined confidently from the diff alone.
+
+For every LOGIC CHANGE or POTENTIAL LOGIC CHANGE:
+
+Explain:
+- What changed?
+- What was the old behaviour?
+- What is the new behaviour?
+- Why does this constitute a logic change?
+- Which functions/classes are affected?
+- What type of output/model result could be affected?
+- If possible, give a small before/after example.
+
+For quantitative/risk-model code, specifically check for changes involving:
+
+- PD
+- LGD
+- EAD
+- CCF
+- ECL
+- calibration
+- segmentation
+- staging
+- default definition
+- missing-value treatment
+- outlier treatment
+- weighting
+- sampling
+- filtering
+- transformations
+- regression/model specification
+- model parameters
+- probability calculations
+- rating/transition matrices
+- time windows
+- aggregation
+- rounding
+- scaling
+- normalization
+- statistical tests
+- backtesting
+- scenario/stress calculations
+
+IMPORTANT:
+
+Do not judge whether a logic change is "better" or "worse".
+Only describe the factual behavioural difference.
+
+Also distinguish between:
+
+1. Code-level change
+2. Behavioural/logic change
+3. Model/risk methodology change
+
+A code-level change does not necessarily mean that model logic changed.
+
+At the end produce this report:
+
+==================================================
+GIT LOGIC CHANGE REVIEW
+==================================================
+
+BASE COMMIT:
+<TBD>
+
+TARGET COMMIT:
+<TBD>
+
+FILES CHANGED:
+<number>
+
+PYTHON FILES CHANGED:
+<number>
+
+--------------------------------------------------
+EXECUTIVE SUMMARY
+--------------------------------------------------
+
+Logic changed: YES / NO / POTENTIAL
+
+Short explanation.
+
+--------------------------------------------------
+FILE-BY-FILE ANALYSIS
+--------------------------------------------------
+
+File: path/to/file.py
+
+Classification:
+NO LOGIC CHANGE / LOGIC CHANGE / POTENTIAL LOGIC CHANGE
+
+Changed functions:
+- function_a()
+- function_b()
+
+Summary:
+...
+
+Detailed logic impact:
+...
+
+--------------------------------------------------
+LOGIC CHANGES
+--------------------------------------------------
+
+1. <description>
+   Old behaviour:
+   New behaviour:
+   Impact:
+
+2. <description>
+   Old behaviour:
+   New behaviour:
+   Impact:
+
+--------------------------------------------------
+NON-LOGIC CHANGES
+--------------------------------------------------
+
+- Refactoring:
+- Formatting:
+- Renaming:
+- Documentation:
+- Performance:
+- Other:
+
+--------------------------------------------------
+POTENTIAL LOGIC CHANGES REQUIRING REVIEW
+--------------------------------------------------
+
+List anything where semantic equivalence cannot be established confidently.
+
+--------------------------------------------------
+FINAL SUMMARY
+--------------------------------------------------
+
+Total files changed:
+Logic changes:
+Potential logic changes:
+Non-logic changes:
+
+Overall conclusion:
+<concise factual conclusion>
+
+Do not merely summarize the Git diff.
+Analyze the semantic/behavioural meaning of the changes.
+
+
+
+I will provide a folder path. Treat the provided folder path as the root directory variable:
+
+ROOT_FOLDER = "<PASTE_FOLDER_PATH_HERE>"
+
+Your task is to:
+
+1. Recursively scan "ROOT_FOLDER" and all of its subdirectories.
+2. Find every ".py" Python file under "ROOT_FOLDER".
+3. Apply the requested code changes to ALL relevant Python files.
+4. Do not modify files outside "ROOT_FOLDER".
+5. Preserve the existing project structure, functionality, formatting, imports, and coding style wherever possible.
+6. Do not unnecessarily rewrite or refactor unrelated code.
+7. Before making changes, inspect the relevant Python files and understand how the existing code works.
+8. If the same functionality exists in multiple Python files, apply the change consistently across all of them.
+9. Handle imports correctly and remove unused imports if they become unnecessary.
+10. Do not create duplicate functions, classes, variables, or imports.
+11. Do not change ".py" files that are unrelated to the requested change.
+12. Preserve backward compatibility unless the requested change explicitly requires otherwise.
+13. After making the changes, check all modified Python files for:
+    - Syntax errors
+    - Undefined variables
+    - Missing imports
+    - Incorrect function/class references
+    - Obvious type inconsistencies
+    - Duplicate code introduced by the modification
+14. Provide a final summary containing:
+    - Number of Python files scanned
+    - Number of Python files modified
+    - Names/paths of modified files
+    - Short description of changes made
+    - Any files that were skipped and why
+    - Any issues that could not be resolved
+
+IMPORTANT:
+
+- "ROOT_FOLDER" is the only root location you are allowed to modify.
+- Work recursively through subfolders.
+- Do not stop after modifying the first matching Python file.
+- Make the changes directly in the existing files.
+- If a requested change is ambiguous for a particular file, inspect the surrounding code and follow the existing project pattern rather than inventing a new architecture.
+
+REQUESTED CHANGE:
+<DESCRIBE THE CHANGE HERE>
+
+
+
+
+
